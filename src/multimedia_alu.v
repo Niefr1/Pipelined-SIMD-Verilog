@@ -12,10 +12,10 @@ module multimedia_alu (
     wire is_R4 = (instr[24] && instr[23]);
 
     // Shared fields
-    wire [4:0] rs3 = instr[19:15];
-    wire [4:0] rs2 = instr[14:10];
-    wire [4:0] rs1 = instr[9:5];
-    wire [4:0] rd = instr[4:0];
+    wire [4:0] rs3i = instr[19:15];
+    wire [4:0] rs2i = instr[14:10];
+    wire [4:0] rs1i = instr[9:5];
+    wire [4:0] rdi = instr[4:0];
 
     // Load immediate instruction fields
     wire [2:0] li_index = instr[23:21];
@@ -30,6 +30,20 @@ module multimedia_alu (
     // R3 instruction fields
     wire [7:0] r3_opcode = instr[22:15];
 
+    // Scratch
+    reg [15:0] ma16, mb16; // 16 bit multiplicands
+    reg [31:0] ma32, mb32; // 32 bit multiplicands
+    reg [31:0] prod32; // 32 bit product
+    reg [63:0] prod64; // 64 bit product
+    reg [32:0] acc33, prod33, mac33; // accumulator, product, multiply-accumulate sign extended
+    reg [64:0] acc65, prod65, mac65; // mac is full precision sum before saturation
+    reg [7:0] aa8, ab8; 
+    // R3 opcode parameters
+    localparam [3:0] NOP = 4'd0, ABSDB = 4'd1, AU = 4'd2, CNT1W = 4'd3,
+        AHS = 4'd4, AND = 4'd5, BCW = 4'd6, MAXWS = 4'd7, MINWS = 4'd8,
+        MLHU = 4'd9, MLHCU = 4'd10, OR = 4'd11, CNTLZ = 4'd12, ROTW = 4'd13,
+        SFWU = 4'd14, SFHS = 4'd15;
+
     always @ (*) begin
         // Default
         result = 128'd0;
@@ -39,12 +53,59 @@ module multimedia_alu (
         if (is_li) begin
             result = rs1;
             result[li_index*16 +: 16] = li_immediate;
-        end else if (is_r4) begin
-            
-        end else if (is_r3) begin
-            
+        end else if (is_R4) begin
+            if (!r4_long) begin // 16 bit fields
+                for (int i = 0; i < 4; i = i + 1) begin
+                    ma16 = (r4_high) ? (rs3[i*32+16 +: 16]) : (rs3[i*32 +: 16]);
+                    mb16 = (r4_high) ? (rs2[i*32+16 +: 16]) : (rs2[i*32 +: 16]);
+                    prod32 = ma16 * mb16;
+                    acc33 = {rs1[i*32+31], rs1[i*32 +: 32]}; // Sign extend rs1
+                    prod33 = {prod32[31], prod32}; // Sign extend prod32
+                    mac33 = r4_sub ? (acc33 - prod33) : (acc33 + prod33); // Add or subtract
+                    case (mac33[32:31]) 
+                        2'b01 : result[i*32 +: 32] = 32'h7FFFFFFF; // overflow; clamp on highest value
+                        2'b10 : result[i*32 +: 32] = 32'h80000000; // underflow; clamp on lowest value
+                        default : result[i*32 +: 32] = mac33[31:0];
+                    endcase
+                end
+            end else begin // 32 bit fields
+                for (int i = 0; i < 2; i = i + 1) begin
+                    ma32 = (r4_high) ? (rs3[i*64+32 +: 32]) : (rs3[i*64 +: 32]);
+                    mb32 = (r4_high) ? (rs2[i*64+32 +: 32]) : (rs2[i*64 +: 32]);
+                    prod64 = ma32 * mb32;
+                    acc65 = {rs1[i*64+63], rs1[i*64 +: 64]};
+                    prod65 = {prod64[63], prod64};
+                    mac65 = r4_sub ? (acc65 - prod65) : (acc65 + prod65);
+                    case (mac65[64:63])
+                        2'b01 : result[i*64 +: 64] = 64'h7FFF_FFFF_FFFF_FFFF;
+                        2'b10 : result[i*64 +: 64] = 64'h8000_0000_0000_0000;
+                        default : result[i*32 +: 32] = mac65[31:0];
+                    endcase
+                end
+            end
+        end else if (is_R3) begin
+            case (r3_opcode)
+                NOP : reg_write = 1'b0;
+                ABSDB : begin
+                    for (int i = 0; i < 16; i = i + 1) begin
+                        result[i*8 +: 8] = (rs1[i*8 +: 8] > rs2[i*8 +: 8]) ? () : ();
+                    end
+                end
+                AU :
+                CNT1W :
+                AHS :
+                AND :
+                BCW :
+                MAXWS :
+                MINWS :
+                MLHU :
+                MLHCU :
+                OR :
+                CNTLZ :
+                ROTW :
+                SFWU : 
+                SFHS :
+            endcase
         end
-
     end
-
 endmodule
