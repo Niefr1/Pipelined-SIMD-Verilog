@@ -88,7 +88,8 @@ module multimedia_alu (
                 NOP : reg_write = 1'b0;
                 ABSDB : begin
                     for (int i = 0; i < 16; i = i + 1) begin
-                        result[i*8 +: 8] = (rs1[i*8 +: 8] > rs2[i*8 +: 8]) ? () : ();
+                        result[i*8 +: 8] = (rs1[i*8 +: 8] > rs2[i*8 +: 8]) ? 
+                            (rs1[i*8 +: 8] - rs2[i*8 +: 8]) : (rs2[i*8 +: 8] - rs1[i*8 +: 8]);
                     end
                 end
                 AU :
