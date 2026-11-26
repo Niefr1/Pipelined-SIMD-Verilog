@@ -4,7 +4,7 @@ A 4-stage pipelined SIMD multimedia processor implemented in Verilog. It is a gr
 
 ## Overview
 
-The unit executes packed (SIMD) multimedia operations on wide registers, fetching instructions from an on-chip instruction buffer and running them through a pipeline with data forwarding to resolve hazards. It supports three instruction classes:
+The unit executes packed (SIMD) multimedia operations on wide registers, fetching instructions from an on-chip instruction buffer and running them through a pipeline with data forwarding to resolve hazards. A control register holds `[the unit's control/status state]` and is visible to the rest of the pipeline. It supports three instruction classes:
 
 - **Load immediate (loadi):** writes an immediate value into a field of a register
 - **R3-format:** three-register SIMD operations
@@ -15,6 +15,7 @@ The unit executes packed (SIMD) multimedia operations on wide registers, fetchin
 - 4-stage pipeline: `[IF / ID / EX / WB, adjust to your stage names]`
 - Register file of `[N x W-bit]` registers with `[number]` read ports and `[number]` write port
 - Instruction buffer of `[N]` entries, `[W]` bits each
+- Control register implemented as a dedicated module, `[describe what it controls or reports, e.g. status flags, operating mode, pipeline enable]`
 - Single merged multimedia ALU handling R3, R4, and loadi operations
 - Load-immediate integrated into the register file write path
 - Data forwarding to resolve RAW hazards without unnecessary stalls
@@ -31,7 +32,13 @@ The unit executes packed (SIMD) multimedia operations on wide registers, fetchin
           +--------+     +--------+     +--------+     +--------+
                               ^              |              |
                               +---- forwarding paths -------+
+
+                        +------------------+
+                        |  Control Register |  <---> [pipeline / ALU]
+                        +------------------+
 ```
+
+*(Adjust the diagram to show which stages read or write the control register.)*
 
 ### Modules
 
@@ -39,12 +46,21 @@ The unit executes packed (SIMD) multimedia operations on wide registers, fetchin
 |---|---|---|
 | Instruction buffer | `src/instr_buffer.v` | Stores the program and supplies one instruction per cycle |
 | Register file | `src/register_file.v` | Multi-port register storage with loadi support |
+| Control register | `src/control_register.v` | `[Holds control/status state, how it is written and read]` |
 | Multimedia ALU | `src/multimedia_alu.v` | Merged ALU for R3, R4, and loadi operations |
 | Forwarding unit | `src/forwarding_unit.v` | Detects hazards and selects forwarded operands |
 | Pipeline registers | `src/pipeline_regs.v` | IF/ID, ID/EX, EX/WB latches |
 | Top level | `src/top.v` | Connects all stages |
 
 *(Update the file names to match your repo.)*
+
+### Control Register
+
+`[Describe the control register: its width, the fields or bits it contains, which stage writes it, which stages read it, and its reset value.]`
+
+| Bit(s) | Name | Description |
+|---|---|---|
+| `[x:y]` | `[field]` | `[meaning]` |
 
 ## Design Notes
 
@@ -88,4 +104,38 @@ Place your program in `[program.mem / instruction file]`, then run the top-level
 
 Each module has its own testbench in `tb/`, and `tb_top.v` runs full programs through the pipeline. Tests cover:
 
-- Register file reads, writes, and
+- Register file reads, writes, and load-immediate
+- Control register reset value, writes, and reads
+- Each ALU operation across R3, R4, and loadi
+- Forwarding for back-to-back dependent instructions
+- Pipeline behavior with mixed instruction sequences
+
+## Repository Structure
+
+```
+.
+├── src/        # Verilog source
+├── tb/         # Testbenches
+├── docs/       # Block diagrams and design notes
+└── README.md
+```
+
+## Status
+
+- [x] Redesign planned
+- [ ] Register file
+- [x] Instruction buffer
+- [ ] Control register
+- [ ] Multimedia ALU (merged)
+- [ ] Forwarding unit
+- [ ] Top-level integration and full-program testing
+
+*(Check off items as you finish them.)*
+
+## Background
+
+Originally built for **ESE 345** Stony Brook in VHDL, then reimplemented in Verilog to improve the design and fix architectural mistakes.
+
+## Author
+
+`Felix Nie`
