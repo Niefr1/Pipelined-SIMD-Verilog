@@ -87,13 +87,18 @@ module multimedia_alu (
             case (r3_opcode)
                 NOP : reg_write = 1'b0;
                 ABSDB : begin
-                    for (int i = 0; i < 16; i = i + 1) begin
+                    for (int i = 0; i < 16; i = i + 1)
                         result[i*8 +: 8] = (rs1[i*8 +: 8] > rs2[i*8 +: 8]) ? 
                             (rs1[i*8 +: 8] - rs2[i*8 +: 8]) : (rs2[i*8 +: 8] - rs1[i*8 +: 8]);
+                end
+                AU : begin
+                    for (int i = 0; i < 4; i = i + 1) begin
+                        result[i*32 +: 32] = rs1[i*32 +: 32] + rs2[i*32 +: 32]; 
                     end
                 end
-                AU :
-                CNT1W :
+                CNT1W : begin
+                    
+                end
                 AHS :
                 AND :
                 BCW :
