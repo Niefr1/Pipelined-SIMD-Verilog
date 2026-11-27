@@ -38,6 +38,10 @@ module multimedia_alu (
     reg [32:0] acc33, prod33, mac33; // accumulator, product, multiply-accumulate sign extended
     reg [64:0] acc65, prod65, mac65; // mac is full precision sum before saturation
     reg [7:0] aa8, ab8; 
+    reg [16:0] s17;
+    reg found;
+    integer count;
+
     // R3 opcode parameters
     localparam [3:0] NOP = 4'd0, ABSDB = 4'd1, AU = 4'd2, CNT1W = 4'd3,
         AHS = 4'd4, AND = 4'd5, BCW = 4'd6, MAXWS = 4'd7, MINWS = 4'd8,
@@ -97,18 +101,65 @@ module multimedia_alu (
                     end
                 end
                 CNT1W : begin
-                    
+                    for (int i = 0; i < 4; i = i + 1) begin
+                        for (int j = 0; j < 32; j = j + 1) begin
+                            if (rs1[i*32 + j] == 1'b1) result[i*32 +: 32] = result[i*32 +: 32] + 32'd1;
+                        end
+                    end
                 end
-                AHS :
-                AND :
-                BCW :
-                MAXWS :
-                MINWS :
-                MLHU :
-                MLHCU :
-                OR :
-                CNTLZ :
-                ROTW :
+                AHS : begin
+                    for (int i = 0; i < 8; i = i + 1) begin
+                        s17 = {rs1[i*16 + 15], rs1[i*16 +: 16]} + {rs2[i*16 + 15], rs2[i*16 +: 16]};
+                    
+                        case ({s17[16], s17[15]})
+                            2'b01 : result[i*16 +: 16] = 16'h7FFF; // Overflow
+                            2'b10 : result[i*16 +: 16] = 16'h8000; // Underflow
+                            default : result[i*16 +: 16] = s17[15:0];
+                        endcase
+                    end
+                end
+                AND : result = rs1 & rs2;
+                BCW : begin 
+                    for (int i = 0; i < 4; i = i + 1)
+                        result[i*32 +: 32] = rs1[31:0];
+                end
+                MAXWS : begin
+                    for (int i = 0; i < 4; i = i + 1) 
+                        result[i*32 +: 32] = ($signed(rs1[i*32 +: 32]) > $signed(rs2[i*32 +: 32])) 
+                            ? (rs1[i*32 +: 32]) : (rs2[i*32 +: 32]);
+                end
+                MINWS : begin
+                    for (int i = 0; i < 4; i = i + 1) 
+                        result[i*32 +: 32] = ($signed(rs1[i*32 +: 32]) < $signed(rs2[i*32 +: 32])) 
+                            ? (rs1[i*32 +: 32]) : (rs2[i*32 +: 32]);
+                end
+                MLHU : begin
+                    for (int i = 0; i < 4; i = i + 1)
+                        result[i*32 +: 32] = rs1[i*32 +: 16] * rs2[i*32 +: 16];
+                end
+                MLHCU : begin
+                    for (int i = 0; i < 4; i = i + 1)
+                        result[i*32 +: 32] = rs1[i*32 +: 16] * instr[14:10];
+                end 
+                OR : result = rs1 | rs2;
+                CNTLZ : begin
+                    for (int i = 0; i < 4; i = i + 1) begin
+                        count = 0;
+                        found = 1'b0; 
+                        for (int j = 31; j >= 0; j = j - 1) begin
+                            if (!found) begin
+                               if (rs1[i*32 + j]) found = 1'b1;
+                               else count = count + 1; 
+                            end
+                        end
+                        result[i*32 +: 32] = count;
+                    end 
+                end
+                ROTW : begin
+                    for (int i = 0; i < 4; i = i + 1) begin
+                        
+                    end
+                end
                 SFWU : 
                 SFHS :
             endcase
