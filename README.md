@@ -126,7 +126,7 @@ Each module has its own testbench in `tb/`, and `tb_top.v` runs full programs th
 - [ ] Register file
 - [x] Instruction buffer
 - [ ] Control register
-- [ ] Multimedia ALU (merged)
+- [x] Multimedia ALU (merged)
 - [ ] Forwarding unit
 - [ ] Top-level integration and full-program testing
 
