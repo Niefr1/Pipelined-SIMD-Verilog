@@ -88,7 +88,7 @@ module multimedia_alu (
                 end
             end
         end else if (is_R3) begin
-            case (r3_opcode)
+            case (r3_opcode[3:0])
                 NOP : reg_write = 1'b0;
                 ABSDB : begin
                     for (int i = 0; i < 16; i = i + 1)
@@ -157,11 +157,27 @@ module multimedia_alu (
                 end
                 ROTW : begin
                     for (int i = 0; i < 4; i = i + 1) begin
-                        
+                        // reused count
+                        for (count = {27'd0, rs2[i*32 +: 5]}; count > 0; count = count - 1)
+                            result[i*32 +: 32] = {rs1[i*32], rs1[i*32+1 +: 31]};
                     end
                 end
-                SFWU : 
-                SFHS :
+                SFWU : begin
+                    for (int i = 0; i < 4; i = i + 1) begin
+                        result[i*32 +: 32] = rs2[i*32 +: 32] - rs1[i*32 +: 32];
+                    end
+                end
+                SFHS : begin
+                    for (int i = 0; i < 8; i = i + 1) begin
+                        s17 = {rs2[i*16 + 15], rs2[i*16 +: 16]} - {rs1[i*16 + 15], rs1[i*16 +: 16]};
+
+                        case ({s17[16], s17[15]})
+                            2'b01 : result[i*16 +: 16] = 16'h7FFF; // Overflow
+                            2'b10 : result[i*16 +: 16] = 16'h8000; // Underflow
+                            default : result[i*16 +: 16] = s17[15:0];
+                        endcase
+                    end 
+                end
             endcase
         end
     end
