@@ -3,6 +3,7 @@ module multimedia_alu (
     input wire [127:0] rs1,
     input wire [127:0] rs2,
     input wire [127:0] rs3,
+    input wire [127:0] rd,
     output reg [127:0] result,
     output reg reg_write
 );
@@ -55,7 +56,7 @@ module multimedia_alu (
 
         // Check instruction type
         if (is_li) begin
-            result = rs1;
+            result = rd;
             result[li_index*16 +: 16] = li_immediate;
         end else if (is_R4) begin
             if (!r4_long) begin // 16 bit fields
