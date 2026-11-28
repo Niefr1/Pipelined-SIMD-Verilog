@@ -38,8 +38,6 @@ The unit executes packed (SIMD) multimedia operations on wide registers, fetchin
                         +------------------+
 ```
 
-*(Adjust the diagram to show which stages read or write the control register.)*
-
 ### Modules
 
 | Module | File | Description |
@@ -66,9 +64,9 @@ The unit executes packed (SIMD) multimedia operations on wide registers, fetchin
 
 **Redesign from the original VHDL version**
 
-- **Merged ALU.** The original design used separate files for R3, R4, and loadi instructions. These are now one ALU with opcode-based operation selection, which removes duplicated logic and simplifies the datapath.
-- **Integrated load-immediate.** Previously, load-immediate was implemented as a separate entity/architecture outside the register file. It is now handled through the register file's normal write path.
-- **Corrected datapath issues** identified in the original block diagram (`Pipelined_Multimedia_Unit_Design.drawio`). `[List the specific fixes here.]`
+- **Merge ALU.** The original design used separate files for R3, R4, and loadi instructions. These are now one ALU with opcode-based operation selection, which removes duplicated logic and simplifies the datapath.
+- **Integrat load-immediate.** Previously, load-immediate was implemented as a separate entity/architecture outside the register file. It is now handled through the register file's normal write path.
+- **Correct datapath issues** identified in the original block diagram (`Pipelined_Multimedia_Unit_Design.drawio`).
 
 ## Instruction Set
 
@@ -123,14 +121,13 @@ Each module has its own testbench in `tb/`, and `tb_top.v` runs full programs th
 ## Status
 
 - [x] Redesign planned
-- [ ] Register file
+- [x] Register file
 - [x] Instruction buffer
 - [ ] Control register
 - [x] Multimedia ALU (merged)
 - [ ] Forwarding unit
+- [ ] Unit test benches
 - [ ] Top-level integration and full-program testing
-
-*(Check off items as you finish them.)*
 
 ## Background
 
